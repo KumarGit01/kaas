@@ -3,15 +3,16 @@ import Bytez from "bytez.js"
 const sdk = new Bytez(process.env.BYTEZ_API_KEY)
 const model = sdk.model("inference-net/Schematron-3B")
 
-export async function POST(req) {
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" })
+  }
+
   try {
-    const { name, role, tone } = await req.json()
+    const { name, role, tone } = req.body
 
     if (!name || !role || !tone) {
-      return Response.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      )
+      return res.status(400).json({ error: "Missing required fields" })
     }
 
     const prompt = `
@@ -50,17 +51,15 @@ Instructions:
     ])
 
     if (error) {
-      return Response.json({ error }, { status: 500 })
+      return res.status(500).json({ error })
     }
 
-    return Response.json({
+    return res.status(200).json({
       message: output.content
     })
 
   } catch (err) {
-    return Response.json(
-      { error: "Server error" },
-      { status: 500 }
-    )
+    console.error(err)
+    return res.status(500).json({ error: "Server error" })
   }
 }
